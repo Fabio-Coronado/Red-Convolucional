@@ -1,10 +1,12 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-class Matrix {
+
+class Matrix implements Serializable{
+        private static final long serialVersionUID = 1L;
 	double [][]data;
 	int rows,cols;
-	
 	public Matrix(int rows,int cols) {
             
 		data= new double[rows][cols];
@@ -21,7 +23,7 @@ class Matrix {
 	
 	public void print()
 	{
-            System.out.println("inicio ");
+            System.out.println("inicio matriz");
 		for(int i=0;i<rows;i++)
 		{
 			for(int j=0;j<cols;j++)
@@ -30,7 +32,7 @@ class Matrix {
 			}
 			System.out.println();
 		}
-            System.out.println("fin ");
+            System.out.println("fin matriz");
 	}
 	
 	public void add(int scaler)
@@ -106,10 +108,10 @@ class Matrix {
 		}
 		return temp;
 	}
-
+        
 	public static Matrix multiply(Matrix a, Matrix b) {
 		Matrix temp=new Matrix(a.rows,b.cols);
-                
+                //DoubleMatrix temp1 = new DoubleMatrix(temp.data);
                 
                 
 		for(int i=0;i<temp.rows;i++)
@@ -126,19 +128,22 @@ class Matrix {
 		}
 		return temp;
 	}
-   
-        /*
-        public static Matrix multiply(Matrix a, Matrix b) {
-		Matrix temp=new Matrix(a.rows,b.cols);
-                double [][] result = new double[a.rows][b.cols];
-                
-                ParallelThreadsCreator.multiply(a.data, b.data, temp.data);
-                //temp.print();
-                return temp;
+        
+        public void copy(Matrix a) {
+            //copiar aaca desde a
+		//Matrix temp=new Matrix(a.rows,a.cols);
+                //DoubleMatrix temp1 = new DoubleMatrix(temp.data);
+
+		for(int i=0;i<a.rows;i++)
+		{
+			for(int j=0;j<a.cols;j++)
+			{
+				
+				data[i][j]=a.data[i][j];
+			}
+		}
 		
 	}
-               
-      */
 
 	
 	public void multiply(Matrix a) {
@@ -191,4 +196,4 @@ class Matrix {
 
 
 
-}	        
+}	

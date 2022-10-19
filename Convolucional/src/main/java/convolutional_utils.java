@@ -150,7 +150,10 @@ public class convolutional_utils {
                         }
                 
                     //recalculando mapa convolucional
+                    //paralelizar
                     double [][] r_mapa_convolucional = conv_(p_imagenes, p_filtro);
+                    
+                    
                         
                     for(int i_mp = 0; i_mp < mapa_convolucional.length; i_mp++ ){
 
@@ -161,12 +164,7 @@ public class convolutional_utils {
                     }
             }
                 
-                //definimos filtro actual
-            //if(getNumDimensions())
-            
-         
-            
-            //System.out.println(mapa_convolucional[60][155]);
+
           //verificado
           
             for(int j1 = 0; j1 < mapa_convolucional.length; j1++){
@@ -262,13 +260,29 @@ public class convolutional_utils {
               for (int j = 0 ; j< b ;j++){
                   for (int k = 0 ; k< c ;k++){
                         for (int l = 0 ; l< d ;l++){
-                            filtros[i][j][k][l] = Math.random();
+                            filtros[i][j][k][l] = Math.random() *2 -1;
                   }         
+                }         
+             }        
+        }
+         return filtros;
+    }
+    
+    public double [][][] filtros_aleatorios3(int a, int b, int c){
+         double [][][] filtros = new double[a][b][c];      
+         for (int i = 0 ; i< a ;i++){
+              for (int j = 0 ; j< b ;j++){
+                  for (int k = 0 ; k< c ;k++){
+                        
+                            filtros[i][j][k] = Math.random() *2 -1;
+                          
             }         
              }        
         }
          return filtros;
     }
+    
+    
     
     //aplana matriz de tres dimensiones
     public double[] aplanar(double [][][] matriz){
@@ -285,57 +299,37 @@ public class convolutional_utils {
         return matriz_aplanada;
     }
     
-    public double [][] proceso_convolucion(double [][][] imagenes, double[][][] filtros, double[][][][] filtros2, double[][][][] filtros3){
-        //ArrayList<double [][]> cars = new ArrayList<double [][]>();
-        double [][] ingreso_entrenamiento = new  double[imagenes.length][];
+    
+    //dividir el proceso en N partes
+    
+    public double [][] proceso_convolucion(double [][][] imagenes, int cores, double[][][] filtros, double [][][][] filtros2){
         
-
-        double [][] auxiliar = new double[imagenes[0].length][imagenes[0][0].length];
-         for (int i = 0 ; i< imagenes.length ;i++){
-              for (int j = 0 ; j< imagenes[0].length ;j++){
-                  for (int k = 0 ; k< imagenes[0][0].length ;k++){
-                          auxiliar[j][k] = imagenes[i][j][k];
-                          
-                }         
-            }
-              //proceso convolucion
-                double [][][] array;
-                array = conv(auxiliar, filtros);
-                //System.out.println(Arrays.deepToString(array));
-                double [][][] relu1;
-                relu1 = relu(array);
-                double [][][] pool;
-                pool = pool(relu1, 2, 2);
-
-
-                double [][][] array2;
-                array2 = conv2(pool, filtros2);
-                //System.out.println(Arrays.deepToString(array));
-                double [][][] relu2;
-                relu2 = relu(array2);
-                double [][][] pool2;
-                pool2 = pool(relu2, 2, 2);
+        double [][] ingreso_entrenamiento = new double[imagenes.length][];
+        
+        
+        //double [][] auxiliar = new double[imagenes[0].length][imagenes[0][0].length];
+            int N = imagenes.length;
+            System.out.println(N);
+            try {
+            
+            Thread[] Ts = new Thread[cores]; // treads creados
+            int Rs = N/cores; 
+            for(int w=0;w<cores;w++)
+                {
+                    int Ra = Rs*(w+1)
+                    ; // rows assigned 
+                    if (w==cores-1) // ultimo thread hasta el final
+                     Ra = imagenes.length;
+                    
+                    workercore wc = new workercore(imagenes,filtros,filtros2,ingreso_entrenamiento,Rs*w,Ra);
+                    Ts[w] = new Thread(wc);
+                    Ts[w].start(); // iniciando thread
+                }
+            for(int w=0;w<cores;w++) Ts[w].join(); // esperarar que cada uno finalize
+        } catch (InterruptedException ie) {System.out.println(ie); System.exit(1);}
+        
+        
                 
-                
-                double [][][] array3;
-                array3 = conv2(pool2, filtros3);
-                //System.out.println(Arrays.deepToString(array));
-                double [][][] relu3;
-                relu3 = relu(array3);
-                double [][][] pool3;
-                pool3 = pool(relu3, 2, 2);
-                
-                
-                double [] aplanada =  aplanar(pool3);
-                ingreso_entrenamiento[i] = aplanada;
-                
-                
-        }
-         
-       
-          //System.out.println(Arrays.deepToString(ingreso_entrenamiento));
-                          
-           
         return ingreso_entrenamiento;
         
     }
@@ -344,4 +338,89 @@ public class convolutional_utils {
     
     
  }
+
+class workercore implements Runnable
+{
+    double [][][] imagenes;  // pointer to external matrices, AXB = R
+    double [][][] filtros;
+    double [][] ingreso_entrenamiento;
+    double[][][][] filtros2;
+    double[][][][] filtros3;
+    double[][][][] filtros4;
+    convolutional_utils utils3 = new convolutional_utils();
+    int start, N; // starting row and number of rows.
+    double [][] auxiliar;
+    public workercore(double [][][] imagenes,double[][][] filtros  ,double[][][][] filtros2, double [][] ingreso_entrenamiento ,int s, int n){
+        this.imagenes = imagenes; 
+        this.filtros = filtros; 
+        this.filtros2 = filtros2;        
+        //this.filtros3 = filtros3;
+        //this.filtros4 = filtros4;
+        this.ingreso_entrenamiento = ingreso_entrenamiento;
+        start=s; 
+        N=n;
+        auxiliar = new double[imagenes[0].length][imagenes[0][0].length];
+        
+    }
+
+    @Override
+    public void run()
+    {
+	
+         for (int i = start ; i< N ;i++){
+            
+            //llenando imagenes
+              for (int j = 0 ; j< imagenes[0].length ;j++){
+                  for (int k = 0 ; k< imagenes[0][0].length ;k++){
+                          auxiliar[j][k] = imagenes[i][j][k];
+                          
+                }         
+            }
+              
+              
+                double [][][] array;
+                
+                array = utils3.conv(auxiliar, filtros);
+                //System.out.println(Arrays.deepToString(array));
+                double [][][] relu1;
+                relu1 = utils3.relu(array);
+                double [][][] pool;
+                pool = utils3.pool(relu1, 2, 2);
+
+                
+                double [][][] array2;
+                //System.out.println(pool[0][0].length);
+                array2 = utils3.conv2(pool, filtros2);           
+                double [][][] relu2;
+                relu2 = utils3.relu(array2);
+                double [][][] pool2;
+                pool2 = utils3.pool(relu2, 2, 2);
+                
+                /*
+                double [][][] array3;
+                //System.out.println(pool2[0][0].length);
+                array3 = utils3.conv2(pool2, filtros3);
+                double [][][] relu3;
+                relu3 = utils3.relu(array3);
+                double [][][] pool3;
+                pool3 = utils3.pool(relu3, 2, 2);
+                */
+                /*
+                double [][][] array4;
+                //System.out.println(pool3[0][0].length);
+                array4 = utils3.conv2(pool3, filtros4);
+                double [][][] relu4;
+                relu4 = utils3.relu(array4);
+                double [][][] pool4;
+                pool4 = utils3.pool(relu4, 2, 2);
+                */
+                            
+                double [] aplanada =  utils3.aplanar(pool2);
+                ingreso_entrenamiento[i] = aplanada;
+                //System.out.println(aplanada.length);
+                
+        }
+                
+    }
+}//workercore
 

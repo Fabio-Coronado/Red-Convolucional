@@ -47,10 +47,10 @@ public class ListaImagenes {
 	}
         
         public double[][] Salida(int cantidad, int total) {
-		double salida[][] = new double[cantidad*total][total];
+		double salida[][] = new double[cantidad][total];
 		
 		int j = 0;
-		for(int i=0; i<cantidad*total; i++) {
+		for(int i=0; i<cantidad; i++) {
 	    	salida[i][j]=1;
 	    	if((i+1)%cantidad==0 && i!=0) {
 	    		j++;
@@ -58,6 +58,15 @@ public class ListaImagenes {
 	    }
 		return salida;
 	}
+        
+        public void PrintMatrix(double [][] matrix){
+         for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[i].length; j++) {
+                System.out.print(matrix[i][j] + " ");
+            }
+            System.out.println();
+        }
+        }
 	
 	public void TotalImagenes(File Carpeta) {
 		for (File Entrada : Carpeta.listFiles()) {
